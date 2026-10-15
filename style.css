@@ -346,7 +346,7 @@ footer { background: var(--navy); color: rgba(255,255,255,.55); text-align: cent
   .fade-up, .reveal { opacity: 1; transform: none; }
 }
 
-/* ---------- Nombre con hojitas ---------- */
+/* ---------- Nombre ---------- */
 .brand-name {
   font-family: 'Montserrat', sans-serif;
   font-weight: 800;
@@ -360,7 +360,7 @@ footer { background: var(--navy); color: rgba(255,255,255,.55); text-align: cent
 }
 @keyframes shine { to { background-position: -250% center; } }
 
-.leafy { position: relative; display: inline-block; }
+.hero-name { position: relative; display: inline-block; }
 .navbar-brand .brand-name { font-size: 1.05rem; }
 .hero-name {
   margin: 0 0 18px;
@@ -373,21 +373,6 @@ footer { background: var(--navy); color: rgba(255,255,255,.55); text-align: cent
   width: 24px; height: 2px; background: var(--gold);
 }
 
-.leaf {
-  position: absolute;
-  top: 40%;
-  width: 14px; height: 14px;
-  pointer-events: none;
-  z-index: 3;
-  animation: leafFall var(--dur, 4s) ease-in forwards;
-}
-.leaf svg { width: 100%; height: 100%; display: block; animation: leafSway 1.6s ease-in-out infinite alternate; }
-@keyframes leafFall {
-  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.4); }
-  12%  { opacity: 1; transform: translate(calc(var(--dx) * .1), -14px) rotate(40deg) scale(1); }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.8); }
-}
-@keyframes leafSway { from { transform: rotate(-25deg) translateX(-4px); } to { transform: rotate(25deg) translateX(4px); } }
 
 @media (max-width: 575px) {
   .navbar-brand .brand-name { font-size: .78rem; letter-spacing: .06em; }
@@ -550,11 +535,24 @@ footer { border-top: 1px solid var(--line); }
 @keyframes photoGlow { 50% { box-shadow: 0 0 0 12px rgba(0,212,255,.08), 0 0 70px rgba(0,212,255,.8); } }
 .floating-chip { background: rgba(2, 12, 30, .85); }
 
-/* Hojitas en neón */
-.leaf svg { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 6px rgba(0,212,255,.8)); }
 
 .viewer-box { border: 1px solid var(--line); box-shadow: 0 0 60px rgba(0,212,255,.2); }
 
 @media (max-width: 767px) {
   .hud-text, .hud-bars { display: none; }
 }
+
+/* ---------- Leyenda LISA del inicio ---------- */
+#hudMoran { color: #7df9ff; font-weight: 700; }
+.hud-legend {
+  position: absolute; bottom: 34px; left: 64px;
+  display: flex; gap: 18px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: .7rem; letter-spacing: .1em; color: rgba(0,212,255,.7);
+}
+.hud-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.hud-legend i { width: 12px; height: 12px; display: inline-block; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.lg-hh { background: rgba(0,212,255,.8); }
+.lg-ll { background: rgba(110,90,255,.8); }
+.lg-pt { background: #dffcff; border-radius: 50%; clip-path: none !important; width: 7px !important; height: 7px !important; box-shadow: 0 0 8px #7df9ff; }
+@media (max-width: 767px) { .hud-legend { display: none; } }

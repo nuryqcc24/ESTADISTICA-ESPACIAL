@@ -1,19 +1,42 @@
-// ===================== Red de partículas (fondo del inicio) =====================
+// ===================== Fondo animado de estadística espacial =====================
+// Malla hexagonal (datos de área) con hotspots/coldspots que se mueven,
+// eventos puntuales con ondas (patrón de puntos), conexiones entre vecinos
+// (matriz de pesos) y el I de Moran calculado en vivo sobre la malla.
 (function () {
   const canvas = document.getElementById('network');
   const ctx = canvas.getContext('2d');
+  const moranLabel = document.getElementById('hudMoran');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let w, h, points, brains, pulses = [];
+  const R = 24;                       // radio del hexágono
+  const HW = Math.sqrt(3) * R;        // ancho del hexágono
+  const VH = 1.5 * R;                 // separación vertical
+  let w, h, cells, grid, rows, cols, events = [], t = 0;
 
-  // Silueta de cerebro (24×24), dibujada con Path2D
-  const BRAIN = [
-    'M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z',
-    'M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z',
-    'M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4',
-    'M17.599 6.5a3 3 0 0 0 .399-1.375', 'M6.003 5.125A3 3 0 0 0 6.401 6.5',
-    'M3.477 10.896a4 4 0 0 1 .585-.396', 'M19.938 10.5a4 4 0 0 1 .585.396',
-    'M6 18a4 4 0 0 1-1.967-.516', 'M19.967 17.484A4 4 0 0 1 18 18',
-  ].map(d => new Path2D(d));
+  // Focos que se desplazan: valor positivo = hotspot, negativo = coldspot
+  const spots = [
+    { s: 1, ax: 0.78, ay: 0.38, rx: 0.10, ry: 0.12, sp: 0.0021, sig: 150 },
+    { s: 1, ax: 0.62, ay: 0.72, rx: 0.14, ry: 0.08, sp: 0.0016, sig: 120 },
+    { s: 1, ax: 0.90, ay: 0.78, rx: 0.06, ry: 0.10, sp: 0.0027, sig: 100 },
+    { s: -1, ax: 0.50, ay: 0.30, rx: 0.12, ry: 0.10, sp: 0.0018, sig: 140 },
+    { s: -1, ax: 0.30, ay: 0.80, rx: 0.15, ry: 0.06, sp: 0.0013, sig: 160 },
+  ];
+  function spotPos(p, i) {
+    return {
+      x: w * (p.ax + p.rx * Math.sin(t * p.sp + i * 1.7)),
+      y: h * (p.ay + p.ry * Math.cos(t * p.sp * 1.3 + i)),
+    };
+  }
+
+  function hexPath(cx, cy) {
+    const path = new Path2D();
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI / 180 * (60 * k - 30);
+      const x = cx + (R - 1.5) * Math.cos(a), y = cy + (R - 1.5) * Math.sin(a);
+      k ? path.lineTo(x, y) : path.moveTo(x, y);
+    }
+    path.closePath();
+    return path;
+  }
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -22,171 +45,163 @@
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.min(60, Math.floor((w * h) / 24000));
-    points = Array.from({ length: n }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-    }));
-    const nb = Math.max(6, Math.min(16, Math.floor(w / 110)));
-    brains = Array.from({ length: nb }, () => ({
-      x: Math.random() * w,
-      y: 110 + Math.random() * (h - 160),
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      size: 22 + Math.random() * 22,
-      rot: (Math.random() - 0.5) * 0.5,
-      phase: Math.random() * Math.PI * 2,
-      fire: 0,
-    }));
-    pulses = [];
+    rows = Math.ceil(h / VH) + 1;
+    cols = Math.ceil(w / HW) + 1;
+    cells = [];
+    grid = [];
+    for (let r = 0; r < rows; r++) {
+      grid[r] = [];
+      for (let c = 0; c < cols; c++) {
+        const x = c * HW + (r % 2 ? HW / 2 : 0), y = r * VH;
+        const cell = { x, y, r, c, v: 0, path: hexPath(x, y), fade: 0.25 + 0.75 * Math.min(1, x / (w * 0.9)) };
+        grid[r][c] = cell;
+        cells.push(cell);
+      }
+    }
+    // vecinos tipo Queen en malla hexagonal (offset por filas)
+    const even = [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]];
+    const odd = [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]];
+    for (const cell of cells) {
+      cell.nb = (cell.r % 2 ? odd : even)
+        .map(([dr, dc]) => grid[cell.r + dr] && grid[cell.r + dr][cell.c + dc])
+        .filter(Boolean);
+    }
   }
 
-  // Cerebros conectados por sinapsis con impulsos de luz
-  const SYN_DIST = 260;
-  function drawBrains() {
-    // conexiones (dendritas curvas)
-    for (let i = 0; i < brains.length; i++) {
-      for (let j = i + 1; j < brains.length; j++) {
-        const a = brains[i], b = brains[j];
+  function updateField() {
+    const pos = spots.map(spotPos);
+    for (const cell of cells) {
+      let v = 0;
+      spots.forEach((p, i) => {
+        const dx = cell.x - pos[i].x, dy = cell.y - pos[i].y;
+        v += p.s * Math.exp(-(dx * dx + dy * dy) / (2 * p.sig * p.sig));
+      });
+      cell.v = v + 0.08 * Math.sin(cell.x * 0.05 + cell.y * 0.03 + t * 0.02);
+    }
+    return pos;
+  }
+
+  // I de Moran global con pesos estandarizados por fila
+  function moranI() {
+    const n = cells.length;
+    const mean = cells.reduce((s, c) => s + c.v, 0) / n;
+    let num = 0, den = 0;
+    for (const c of cells) {
+      const zi = c.v - mean;
+      den += zi * zi;
+      let lag = 0;
+      for (const nb of c.nb) lag += nb.v - mean;
+      num += zi * (lag / c.nb.length);
+    }
+    return num / den;
+  }
+
+  function drawHexes() {
+    ctx.lineWidth = 1;
+    for (const c of cells) {
+      const f = c.fade;
+      if (c.v > 0.3) {                     // High-High (hotspot)
+        const a = Math.min(1, (c.v - 0.3) / 0.7);
+        ctx.fillStyle = `rgba(0, 212, 255, ${(0.08 + 0.42 * a) * f})`;
+        ctx.fill(c.path);
+        ctx.strokeStyle = `rgba(125, 249, 255, ${(0.25 + 0.6 * a) * f})`;
+      } else if (c.v < -0.3) {             // Low-Low (coldspot)
+        const a = Math.min(1, (-c.v - 0.3) / 0.7);
+        ctx.fillStyle = `rgba(70, 60, 255, ${(0.06 + 0.32 * a) * f})`;
+        ctx.fill(c.path);
+        ctx.strokeStyle = `rgba(140, 120, 255, ${(0.2 + 0.45 * a) * f})`;
+      } else {                             // no significativo
+        ctx.strokeStyle = `rgba(0, 212, 255, ${0.07 * f})`;
+      }
+      ctx.stroke(c.path);
+    }
+  }
+
+  // Eventos puntuales: aparecen con más frecuencia cerca de los hotspots
+  function spawnEvent(pos) {
+    const hot = spots.map((p, i) => i).filter(i => spots[i].s > 0);
+    const i = hot[Math.floor(Math.random() * hot.length)];
+    const g = () => (Math.random() + Math.random() + Math.random() - 1.5) * spots[i].sig * 0.9;
+    events.push({ x: pos[i].x + g(), y: pos[i].y + g(), life: 0, max: 220 + Math.random() * 120 });
+  }
+
+  function drawEvents() {
+    // matriz de pesos: conecta eventos vecinos
+    for (let i = 0; i < events.length; i++) {
+      for (let j = i + 1; j < events.length; j++) {
+        const a = events[i], b = events[j];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d > SYN_DIST) continue;
-        const k = 1 - d / SYN_DIST;
-        const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.15;
-        const my = (a.y + b.y) / 2 - (b.x - a.x) * 0.15;
-        ctx.strokeStyle = `rgba(0, 212, 255, ${0.45 * k})`;
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([4, 5]);
-        ctx.lineDashOffset = -t * 0.6;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.quadraticCurveTo(mx, my, b.x, b.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        if (Math.random() < 0.004 * k) pulses.push({ a, b, mx, my, p: 0, speed: 0.008 + Math.random() * 0.01 });
-      }
-    }
-
-    // impulsos viajando por la sinapsis
-    ctx.shadowColor = '#7df9ff';
-    for (const s of pulses) {
-      s.p += s.speed;
-      const u = 1 - s.p;
-      const x = u * u * s.a.x + 2 * u * s.p * s.mx + s.p * s.p * s.b.x;
-      const y = u * u * s.a.y + 2 * u * s.p * s.my + s.p * s.p * s.b.y;
-      ctx.shadowBlur = 18;
-      ctx.fillStyle = 'rgba(200, 250, 255, .95)';
-      ctx.beginPath();
-      ctx.arc(x, y, 2.8, 0, Math.PI * 2);
-      ctx.fill();
-      if (s.p >= 1) s.b.fire = 1;
-    }
-    pulses = pulses.filter(s => s.p < 1);
-
-    // cerebros
-    for (const b of brains) {
-      const glow = 0.55 + 0.25 * Math.sin(t * 0.03 + b.phase) + b.fire * 0.6;
-      const scale = b.size / 24 * (1 + b.fire * 0.15);
-      ctx.save();
-      ctx.translate(b.x, b.y);
-      ctx.rotate(b.rot + Math.sin(t * 0.01 + b.phase) * 0.08);
-      ctx.scale(scale, scale);
-      ctx.translate(-12, -12);
-      ctx.shadowColor = '#00d4ff';
-      ctx.shadowBlur = 14 + b.fire * 30;
-      ctx.fillStyle = `rgba(0, 120, 255, ${0.12 + b.fire * 0.25})`;
-      ctx.fill(BRAIN[0]);
-      ctx.fill(BRAIN[1]);
-      ctx.strokeStyle = `rgba(110, 235, 255, ${Math.min(1, glow)})`;
-      ctx.lineWidth = 1.5 / scale * 1.4;
-      ctx.lineCap = 'round';
-      for (const p of BRAIN) ctx.stroke(p);
-      ctx.restore();
-      b.fire *= 0.94;
-    }
-    ctx.shadowBlur = 0;
-  }
-
-  let t = 0;
-
-  // Ondas de partículas luminosas (estilo holograma)
-  function drawWaves() {
-    const waves = [
-      { amp: 60, len: 0.0045, speed: 0.012, y: 0.72, color: '0, 212, 255', alpha: 0.55 },
-      { amp: 45, len: 0.006, speed: -0.009, y: 0.78, color: '47, 128, 255', alpha: 0.45 },
-      { amp: 80, len: 0.003, speed: 0.007, y: 0.66, color: '125, 249, 255', alpha: 0.3 },
-    ];
-    for (const wv of waves) {
-      for (let x = 0; x < w; x += 6) {
-        const y = h * wv.y
-          + Math.sin(x * wv.len + t * wv.speed * 60) * wv.amp
-          + Math.sin(x * wv.len * 2.3 + t * 0.02) * wv.amp * 0.3;
-        const flicker = 0.5 + 0.5 * Math.sin(x * 0.05 + t * 0.08);
-        ctx.fillStyle = `rgba(${wv.color}, ${wv.alpha * flicker})`;
-        ctx.fillRect(x, y, 2, 2);
-        // polvo disperso alrededor de la onda
-        if ((x / 6) % 4 === 0) {
-          const off = Math.sin(x * 12.9898 + t * 0.01) * 26;
-          ctx.fillStyle = `rgba(${wv.color}, ${wv.alpha * 0.35})`;
-          ctx.fillRect(x, y + off, 1.5, 1.5);
-        }
-      }
-    }
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    drawWaves();
-    const maxDist = 150;
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
-      for (let j = i + 1; j < points.length; j++) {
-        const q = points[j];
-        const d = Math.hypot(p.x - q.x, p.y - q.y);
-        if (d < maxDist) {
-          ctx.strokeStyle = `rgba(0, 190, 255, ${0.35 * (1 - d / maxDist)})`;
-          ctx.lineWidth = 1;
+        if (d < 110) {
+          const al = (1 - d / 110) * 0.5 * Math.min(a.alpha, b.alpha);
+          ctx.strokeStyle = `rgba(160, 240, 255, ${al})`;
           ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(q.x, q.y);
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
           ctx.stroke();
         }
       }
     }
-    ctx.fillStyle = 'rgba(0,212,255, .9)';
-    ctx.shadowColor = '#00d4ff';
-    ctx.shadowBlur = 8;
-    for (const p of points) {
+    ctx.shadowColor = '#7df9ff';
+    for (const e of events) {
+      e.life++;
+      const p = e.life / e.max;
+      e.alpha = p < 0.1 ? p / 0.1 : 1 - Math.max(0, (p - 0.6) / 0.4);
+      // onda expansiva (ping)
+      const ring = (e.life % 90) / 90;
+      ctx.strokeStyle = `rgba(0, 212, 255, ${(1 - ring) * 0.6 * e.alpha})`;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+      ctx.arc(e.x, e.y, 3 + ring * 22, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = `rgba(220, 252, 255, ${e.alpha})`;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, 2.6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
     }
-    ctx.shadowBlur = 0;
-    drawBrains();
+    events = events.filter(e => e.life < e.max);
+  }
+
+  // Marcadores en los centros de los hotspots
+  function drawSpotMarkers(pos) {
+    spots.forEach((p, i) => {
+      if (p.s < 0) return;
+      const { x, y } = pos[i];
+      const s = 14;
+      ctx.strokeStyle = 'rgba(125, 249, 255, .7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x - s, y); ctx.lineTo(x - 5, y);
+      ctx.moveTo(x + 5, y); ctx.lineTo(x + s, y);
+      ctx.moveTo(x, y - s); ctx.lineTo(x, y - 5);
+      ctx.moveTo(x, y + 5); ctx.lineTo(x, y + s);
+      ctx.stroke();
+      ctx.font = '10px Consolas, monospace';
+      ctx.fillStyle = 'rgba(125, 249, 255, .8)';
+      ctx.fillText('HH', x + 8, y - 8);
+      ctx.lineWidth = 1;
+    });
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    const pos = updateField();
+    drawHexes();
+    drawEvents();
+    drawSpotMarkers(pos);
+    if (t % 30 === 0 && moranLabel) moranLabel.textContent = moranI().toFixed(3);
+    if (t % 9 === 0 && events.length < 45) spawnEvent(pos);
   }
 
   function step() {
     t++;
-    for (const b of brains) {
-      b.x += b.vx;
-      b.y += b.vy;
-      if (b.x < 20 || b.x > w - 20) b.vx *= -1;
-      if (b.y < 100 || b.y > h - 30) b.vy *= -1;
-    }
-    for (const p of points) {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0 || p.x > w) p.vx *= -1;
-      if (p.y < 0 || p.y > h) p.vy *= -1;
-    }
-    draw();
+    frame();
     requestAnimationFrame(step);
   }
 
   window.addEventListener('resize', resize);
   resize();
-  reduce ? draw() : step();
+  if (reduce) frame(); else step();
 })();
 
 // ===================== Navbar =====================
@@ -291,35 +306,3 @@ document.querySelectorAll('.viewer').forEach(v => v.addEventListener('click', e 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewers(); });
 
 document.getElementById('year').textContent = new Date().getFullYear();
-
-// ===================== Hojitas que salen del nombre =====================
-(function () {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const colors = ['#00e5ff', '#38bdf8', '#7df9ff', '#2f80ff', '#a5f3fc', '#00b4d8'];
-  const leafSVG = c => `<svg viewBox="0 0 24 24"><path fill="${c}" d="M5 21c0-9 5-16 16-18-1 11-8 17-16 18z"/><path d="M5 21C9 15 13 10 19 5" stroke="rgba(0,0,0,.25)" stroke-width="1.2" fill="none"/></svg>`;
-
-  function spawn(el) {
-    const leaf = document.createElement('span');
-    leaf.className = 'leaf';
-    const size = 10 + Math.random() * 10;
-    leaf.style.width = leaf.style.height = size + 'px';
-    leaf.style.left = Math.random() * 100 + '%';
-    leaf.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
-    leaf.style.setProperty('--dy', (80 + Math.random() * 140) + 'px');
-    leaf.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
-    leaf.style.setProperty('--dur', (3 + Math.random() * 2.5) + 's');
-    leaf.innerHTML = leafSVG(colors[Math.floor(Math.random() * colors.length)]);
-    leaf.addEventListener('animationend', e => { if (e.target === leaf) leaf.remove(); });
-    el.appendChild(leaf);
-  }
-
-  document.querySelectorAll('.leafy').forEach(el => {
-    const max = +el.dataset.leaves || 4;
-    setInterval(() => {
-      if (document.hidden || el.querySelectorAll('.leaf').length >= max) return;
-      spawn(el);
-    }, 650);
-    // Lluvia de hojitas al pasar el mouse por el nombre
-    el.addEventListener('mouseenter', () => { for (let i = 0; i < 8; i++) setTimeout(() => spawn(el), i * 60); });
-  });
-})();

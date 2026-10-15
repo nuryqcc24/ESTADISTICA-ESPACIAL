@@ -502,12 +502,6 @@ footer { border-top: 1px solid var(--line); }
 
 /* ---------- HUD animado del inicio ---------- */
 .hud { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.hud-scan {
-  position: absolute; left: 0; right: 0; height: 120px; top: -120px;
-  background: linear-gradient(180deg, transparent, rgba(0,212,255,.10) 85%, rgba(0,212,255,.55) 100%);
-  animation: scan 6s linear infinite;
-}
-@keyframes scan { to { top: 100%; } }
 .hud-corner { position: absolute; width: 34px; height: 34px; border: 2px solid rgba(0,212,255,.6); }
 .hud-corner.tl { top: 96px; left: 20px; border-right: 0; border-bottom: 0; }
 .hud-corner.tr { top: 96px; right: 20px; border-left: 0; border-bottom: 0; }

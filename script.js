@@ -3,7 +3,17 @@
   const canvas = document.getElementById('network');
   const ctx = canvas.getContext('2d');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let w, h, points;
+  let w, h, points, brains, pulses = [];
+
+  // Silueta de cerebro (24×24), dibujada con Path2D
+  const BRAIN = [
+    'M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z',
+    'M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z',
+    'M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4',
+    'M17.599 6.5a3 3 0 0 0 .399-1.375', 'M6.003 5.125A3 3 0 0 0 6.401 6.5',
+    'M3.477 10.896a4 4 0 0 1 .585-.396', 'M19.938 10.5a4 4 0 0 1 .585.396',
+    'M6 18a4 4 0 0 1-1.967-.516', 'M19.967 17.484A4 4 0 0 1 18 18',
+  ].map(d => new Path2D(d));
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -12,13 +22,90 @@
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.min(110, Math.floor((w * h) / 14000));
+    const n = Math.min(60, Math.floor((w * h) / 24000));
     points = Array.from({ length: n }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.35,
       vy: (Math.random() - 0.5) * 0.35,
     }));
+    const nb = Math.max(6, Math.min(16, Math.floor(w / 110)));
+    brains = Array.from({ length: nb }, () => ({
+      x: Math.random() * w,
+      y: 110 + Math.random() * (h - 160),
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      size: 22 + Math.random() * 22,
+      rot: (Math.random() - 0.5) * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      fire: 0,
+    }));
+    pulses = [];
+  }
+
+  // Cerebros conectados por sinapsis con impulsos de luz
+  const SYN_DIST = 260;
+  function drawBrains() {
+    // conexiones (dendritas curvas)
+    for (let i = 0; i < brains.length; i++) {
+      for (let j = i + 1; j < brains.length; j++) {
+        const a = brains[i], b = brains[j];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > SYN_DIST) continue;
+        const k = 1 - d / SYN_DIST;
+        const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.15;
+        const my = (a.y + b.y) / 2 - (b.x - a.x) * 0.15;
+        ctx.strokeStyle = `rgba(0, 212, 255, ${0.45 * k})`;
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 5]);
+        ctx.lineDashOffset = -t * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.quadraticCurveTo(mx, my, b.x, b.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (Math.random() < 0.004 * k) pulses.push({ a, b, mx, my, p: 0, speed: 0.008 + Math.random() * 0.01 });
+      }
+    }
+
+    // impulsos viajando por la sinapsis
+    ctx.shadowColor = '#7df9ff';
+    for (const s of pulses) {
+      s.p += s.speed;
+      const u = 1 - s.p;
+      const x = u * u * s.a.x + 2 * u * s.p * s.mx + s.p * s.p * s.b.x;
+      const y = u * u * s.a.y + 2 * u * s.p * s.my + s.p * s.p * s.b.y;
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = 'rgba(200, 250, 255, .95)';
+      ctx.beginPath();
+      ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      if (s.p >= 1) s.b.fire = 1;
+    }
+    pulses = pulses.filter(s => s.p < 1);
+
+    // cerebros
+    for (const b of brains) {
+      const glow = 0.55 + 0.25 * Math.sin(t * 0.03 + b.phase) + b.fire * 0.6;
+      const scale = b.size / 24 * (1 + b.fire * 0.15);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rot + Math.sin(t * 0.01 + b.phase) * 0.08);
+      ctx.scale(scale, scale);
+      ctx.translate(-12, -12);
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = 14 + b.fire * 30;
+      ctx.fillStyle = `rgba(0, 120, 255, ${0.12 + b.fire * 0.25})`;
+      ctx.fill(BRAIN[0]);
+      ctx.fill(BRAIN[1]);
+      ctx.strokeStyle = `rgba(110, 235, 255, ${Math.min(1, glow)})`;
+      ctx.lineWidth = 1.5 / scale * 1.4;
+      ctx.lineCap = 'round';
+      for (const p of BRAIN) ctx.stroke(p);
+      ctx.restore();
+      b.fire *= 0.94;
+    }
+    ctx.shadowBlur = 0;
   }
 
   let t = 0;
@@ -76,10 +163,17 @@
       ctx.fill();
     }
     ctx.shadowBlur = 0;
+    drawBrains();
   }
 
   function step() {
     t++;
+    for (const b of brains) {
+      b.x += b.vx;
+      b.y += b.vy;
+      if (b.x < 20 || b.x > w - 20) b.vx *= -1;
+      if (b.y < 100 || b.y > h - 30) b.vy *= -1;
+    }
     for (const p of points) {
       p.x += p.vx;
       p.y += p.vy;

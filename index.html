@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nury Quispe — Estadística Espacial</title>
+  <meta name="description" content="Portafolio académico de Estadística Espacial: análisis con Python (Moran, LISA, NNI, KDE, semivariogramas) y QGIS.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===================== NAVBAR ===================== -->
+  <nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
+    <div class="container">
+      <a class="navbar-brand" href="#inicio">Nury Quispe</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+              aria-controls="navMenu" aria-expanded="false" aria-label="Abrir menú">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navMenu">
+        <ul class="navbar-nav gap-lg-2">
+          <li class="nav-item"><a class="nav-link active" href="#inicio">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link" href="#estadisticas">Estadísticas</a></li>
+          <li class="nav-item"><a class="nav-link" href="#portafolio">Mis trabajos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== HERO ===================== -->
+  <section id="inicio">
+    <canvas id="network"></canvas>
+    <div class="container position-relative">
+      <div class="row align-items-center gy-5">
+        <div class="col-lg-7">
+          <div class="hero-badge fade-up">
+            <i class="bi bi-mortarboard-fill me-1"></i> Ingeniería Estadística e Informática
+          </div>
+          <h1 class="hero-title fade-up delay-1">ESTADÍSTICA<br><span>ESPACIAL</span></h1>
+          <p class="hero-description fade-up delay-2">
+            Portafolio digital con mis trabajos académicos de estadística espacial: autocorrelación
+            (I de Moran y LISA), patrones de puntos, geoestadística y manejo de capas en QGIS.
+            Cada proyecto incluye su código en Python y sus resultados.
+          </p>
+          <div class="d-flex gap-3 flex-wrap fade-up delay-3">
+            <a href="#portafolio" class="btn-gold"><i class="bi bi-folder2-open"></i> Ver trabajos</a>
+            <a href="https://github.com/nuryqcc24/ESTADISTICA-ESPACIAL" target="_blank" rel="noopener" class="btn-ghost">
+              <i class="bi bi-github"></i> Repositorio
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-5 fade-up delay-4">
+          <div class="hero-avatar-wrapper">
+            <!-- Para usar tu foto: guarda tu imagen como img/avatar.png y cambia este bloque por:
+                 <img src="img/avatar.png" alt="Nury Quispe" class="hero-avatar"> -->
+            <div class="hero-globe">
+              <svg viewBox="0 0 200 200" aria-hidden="true">
+                <defs>
+                  <radialGradient id="g" cx="35%" cy="30%" r="75%">
+                    <stop offset="0%" stop-color="#2b5cb8"/>
+                    <stop offset="100%" stop-color="#0a1630"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="92" fill="url(#g)" stroke="#f5b014" stroke-opacity=".5"/>
+                <g fill="none" stroke="#f5b014" stroke-opacity=".28">
+                  <ellipse cx="100" cy="100" rx="92" ry="30"/>
+                  <ellipse cx="100" cy="100" rx="92" ry="62"/>
+                  <ellipse cx="100" cy="100" rx="30" ry="92"/>
+                  <ellipse cx="100" cy="100" rx="62" ry="92"/>
+                  <line x1="8" y1="100" x2="192" y2="100"/>
+                  <line x1="100" y1="8" x2="100" y2="192"/>
+                </g>
+                <g fill="#f5b014">
+                  <circle cx="70" cy="70" r="5"/><circle cx="128" cy="62" r="4"/>
+                  <circle cx="140" cy="118" r="6"/><circle cx="82" cy="134" r="4"/>
+                  <circle cx="110" cy="100" r="3"/>
+                </g>
+                <g stroke="#f5b014" stroke-width="1.2" stroke-opacity=".7">
+                  <line x1="70" y1="70" x2="128" y2="62"/><line x1="128" y1="62" x2="140" y2="118"/>
+                  <line x1="140" y1="118" x2="82" y2="134"/><line x1="82" y1="134" x2="70" y2="70"/>
+                  <line x1="110" y1="100" x2="70" y2="70"/><line x1="110" y1="100" x2="140" y2="118"/>
+                </g>
+              </svg>
+              <span class="globe-initials">NQ</span>
+            </div>
+            <div class="floating-chip chip-1"><i class="bi bi-geo-alt-fill"></i> Puno, Perú</div>
+            <div class="floating-chip chip-2"><i class="bi bi-filetype-py"></i> Python + QGIS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <a href="#estadisticas" class="scroll-hint" aria-label="Bajar"><i class="bi bi-chevron-down"></i></a>
+  </section>
+
+  <!-- ===================== ESTADÍSTICAS ===================== -->
+  <section id="estadisticas">
+    <div class="container">
+      <p class="section-label">Resumen</p>
+      <h2 class="section-title">Estadísticas del curso</h2>
+      <div class="section-divider"></div>
+
+      <div class="row g-4 mb-5">
+        <div class="col-6 col-lg-3"><div class="stat-card"><i class="bi bi-filetype-py"></i><span class="stat-num" data-count="5">0</span><span class="stat-label">Scripts en Python</span></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><i class="bi bi-map"></i><span class="stat-num" data-count="3">0</span><span class="stat-label">Capturas en QGIS</span></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><i class="bi bi-diagram-3"></i><span class="stat-num" data-count="6">0</span><span class="stat-label">Métodos aplicados</span></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><i class="bi bi-layers"></i><span class="stat-num" data-count="3">0</span><span class="stat-label">Tipos de datos espaciales</span></div></div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="topic-card">
+            <div class="topic-icon"><i class="bi bi-dot"></i><i class="bi bi-dot"></i><i class="bi bi-dot"></i></div>
+            <h3>Patrones de puntos</h3>
+            <p>Índice del vecino más cercano (NNI) y densidad de Kernel (KDE) para distinguir patrones agrupados, aleatorios y regulares.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="topic-card">
+            <div class="topic-icon"><i class="bi bi-thermometer-half"></i></div>
+            <h3>Geoestadística</h3>
+            <p>Semivariograma experimental e interpolación continua (RBF) a partir de estaciones de muestreo.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="topic-card">
+            <div class="topic-icon"><i class="bi bi-grid-3x3"></i></div>
+            <h3>Datos de áreas</h3>
+            <p>Matrices de pesos Queen, I de Moran global y clústeres locales LISA (High-High, Low-Low).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="skills mt-5">
+        <span>GeoPandas</span><span>PySAL / esda</span><span>NumPy</span><span>SciPy</span>
+        <span>Matplotlib</span><span>Seaborn</span><span>QGIS</span><span>OpenStreetMap</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PORTAFOLIO ===================== -->
+  <section id="portafolio">
+    <div class="container">
+      <p class="section-label">Trabajos</p>
+      <h2 class="section-title">Portafolio académico</h2>
+      <div class="section-divider"></div>
+
+      <div class="filter-tabs mb-4">
+        <button class="filter-btn active" data-filter="all"><i class="bi bi-grid-3x3-gap"></i> Todos</button>
+        <button class="filter-btn" data-filter="py"><i class="bi bi-filetype-py"></i> Código Python</button>
+        <button class="filter-btn" data-filter="qgis"><i class="bi bi-map"></i> QGIS</button>
+        <button class="filter-btn" data-filter="imagen"><i class="bi bi-image"></i> Imágenes</button>
+      </div>
+
+      <div class="row g-4" id="cards">
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="py">
+          <article class="portfolio-card">
+            <div class="card-color-bar bar-py"></div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-py"><i class="bi bi-filetype-py"></i> Python</span>
+              <h3>Análisis Moran y LISA</h3>
+              <p>Malla urbana de 10×10 distritos con matriz Queen. Calcula el I de Moran global, el diagrama de dispersión y el mapa de clústeres LISA.</p>
+              <div class="tags"><span>Moran</span><span>LISA</span><span>libpysal</span></div>
+              <div class="card-actions">
+                <button class="btn-card" data-code="codigo/moran_lisa_analysis.py"><i class="bi bi-code-slash"></i> Ver código</button>
+                <a class="btn-card outline" href="codigo/moran_lisa_analysis.py" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="py">
+          <article class="portfolio-card">
+            <div class="card-color-bar bar-py"></div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-py"><i class="bi bi-filetype-py"></i> Python</span>
+              <h3>Moran con datos reales</h3>
+              <p>Autocorrelación espacial con GeoPandas sobre datos reales (América del Sur / Guerry, Francia) y mapa temático junto al mapa LISA.</p>
+              <div class="tags"><span>GeoPandas</span><span>Queen</span><span>LISA</span></div>
+              <div class="card-actions">
+                <button class="btn-card" data-code="codigo/moran_datos_reales.py"><i class="bi bi-code-slash"></i> Ver código</button>
+                <a class="btn-card outline" href="codigo/moran_datos_reales.py" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="py">
+          <article class="portfolio-card">
+            <div class="card-color-bar bar-py"></div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-py"><i class="bi bi-filetype-py"></i> Python</span>
+              <h3>Vecino más cercano y KDE</h3>
+              <p>Compara un patrón agrupado (robos) con uno regular (nidos) mediante el ratio NNI (R) y mapas de densidad de Kernel.</p>
+              <div class="tags"><span>NNI</span><span>KDE</span><span>SciPy</span></div>
+              <div class="card-actions">
+                <button class="btn-card" data-code="codigo/vecino_mas_cercano_kde.py"><i class="bi bi-code-slash"></i> Ver código</button>
+                <a class="btn-card outline" href="codigo/vecino_mas_cercano_kde.py" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="py">
+          <article class="portfolio-card">
+            <div class="card-color-bar bar-py"></div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-py"><i class="bi bi-filetype-py"></i> Python</span>
+              <h3>Estadística espacial: los 3 tipos de datos</h3>
+              <p>Un solo script con tres paneles: patrones de puntos, interpolación geoestadística y datos de áreas/polígonos.</p>
+              <div class="tags"><span>Puntos</span><span>RBF</span><span>Polígonos</span></div>
+              <div class="card-actions">
+                <button class="btn-card" data-code="codigo/estadistica_espacial_master.py"><i class="bi bi-code-slash"></i> Ver código</button>
+                <a class="btn-card outline" href="codigo/estadistica_espacial_master.py" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="py">
+          <article class="portfolio-card">
+            <div class="card-color-bar bar-py"></div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-py"><i class="bi bi-filetype-py"></i> Python</span>
+              <h3>Semivariograma experimental</h3>
+              <p>Cálculo paso a paso de γ(h) para los puntos A a F y su gráfica, base para el modelado geoestadístico y kriging.</p>
+              <div class="tags"><span>γ(h)</span><span>Geoestadística</span></div>
+              <div class="card-actions">
+                <button class="btn-card" data-code="codigo/semivariograma.py"><i class="bi bi-code-slash"></i> Ver código</button>
+                <a class="btn-card outline" href="codigo/semivariograma.py" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="qgis imagen">
+          <article class="portfolio-card">
+            <div class="card-thumb" data-img="img/vectorial-qgis.png" data-caption="Capa vectorial Vector_Puno sobre OpenStreetMap">
+              <img src="img/vectorial-qgis.png" alt="Capa vectorial en QGIS" loading="lazy">
+              <span class="thumb-zoom"><i class="bi bi-arrows-fullscreen"></i></span>
+            </div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-qgis"><i class="bi bi-map"></i> QGIS</span>
+              <h3>Capa vectorial: ruta sur del Perú</h3>
+              <p>Digitalización de la línea Vector_Puno (Arequipa – Juliaca – Puno – Moquegua – Tacna) sobre OpenStreetMap.</p>
+              <div class="card-actions">
+                <button class="btn-card" data-img="img/vectorial-qgis.png" data-caption="Capa vectorial Vector_Puno sobre OpenStreetMap"><i class="bi bi-eye"></i> Ver imagen</button>
+                <a class="btn-card outline" href="proyectos/raster-puno.qgz" download title="Descargar proyecto .qgz"><i class="bi bi-download"></i> .qgz</a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="qgis imagen">
+          <article class="portfolio-card">
+            <div class="card-thumb" data-img="img/raster-qgis.png" data-caption="Teselas ráster de OpenStreetMap: Juliaca, Puno y el Lago Titicaca">
+              <img src="img/raster-qgis.png" alt="Capa ráster en QGIS" loading="lazy">
+              <span class="thumb-zoom"><i class="bi bi-arrows-fullscreen"></i></span>
+            </div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-qgis"><i class="bi bi-map"></i> QGIS</span>
+              <h3>Capa ráster: Lago Titicaca</h3>
+              <p>Carga de teselas XYZ de OpenStreetMap con la zona de Juliaca, Puno y la Reserva Nacional del Titicaca.</p>
+              <div class="card-actions">
+                <button class="btn-card" data-img="img/raster-qgis.png" data-caption="Teselas ráster de OpenStreetMap: Juliaca, Puno y el Lago Titicaca"><i class="bi bi-eye"></i> Ver imagen</button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col-sm-6 col-lg-4 card-item" data-type="qgis imagen">
+          <article class="portfolio-card">
+            <div class="card-thumb" data-img="img/qgis-inicio.png" data-caption="Entorno de trabajo de QGIS (EPSG:4326 – WGS 84)">
+              <img src="img/qgis-inicio.png" alt="Interfaz de QGIS" loading="lazy">
+              <span class="thumb-zoom"><i class="bi bi-arrows-fullscreen"></i></span>
+            </div>
+            <div class="card-body-p">
+              <span class="card-type-badge type-qgis"><i class="bi bi-map"></i> QGIS</span>
+              <h3>Entorno de trabajo QGIS</h3>
+              <p>Configuración inicial del proyecto: navegador, panel de capas y sistema de referencia EPSG:4326 – WGS 84.</p>
+              <div class="card-actions">
+                <button class="btn-card" data-img="img/qgis-inicio.png" data-caption="Entorno de trabajo de QGIS (EPSG:4326 – WGS 84)"><i class="bi bi-eye"></i> Ver imagen</button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTACTO ===================== -->
+  <section id="contacto">
+    <div class="container">
+      <div class="contact-box">
+        <div>
+          <p class="section-label">Contacto</p>
+          <h2 class="section-title text-white">¿Hablamos?</h2>
+          <p class="contact-text">Estudiante de Ingeniería Estadística e Informática, Universidad Nacional del Altiplano – Puno.</p>
+        </div>
+        <div class="contact-links">
+          <a href="mailto:nuquispecc@est.unap.edu.pe"><i class="bi bi-envelope-fill"></i> nuquispecc@est.unap.edu.pe</a>
+          <a href="https://github.com/nuryqcc24" target="_blank" rel="noopener"><i class="bi bi-github"></i> github.com/nuryqcc24</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">© <span id="year"></span> Nury Quispe · Estadística Espacial · UNA Puno</div>
+  </footer>
+
+  <!-- ===================== MODALES ===================== -->
+  <div class="viewer" id="codeViewer" aria-hidden="true">
+    <div class="viewer-box">
+      <div class="viewer-head">
+        <span id="codeTitle"><i class="bi bi-filetype-py"></i></span>
+        <div class="d-flex gap-2">
+          <button class="icon-btn" id="copyCode" title="Copiar"><i class="bi bi-clipboard"></i></button>
+          <button class="icon-btn" data-close title="Cerrar"><i class="bi bi-x-lg"></i></button>
+        </div>
+      </div>
+      <pre><code class="language-python" id="codeBlock">Cargando…</code></pre>
+    </div>
+  </div>
+
+  <div class="viewer" id="imgViewer" aria-hidden="true">
+    <button class="icon-btn close-float" data-close title="Cerrar"><i class="bi bi-x-lg"></i></button>
+    <figure>
+      <img id="imgFull" alt="">
+      <figcaption id="imgCaption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -543,7 +543,7 @@ footer { border-top: 1px solid var(--line); }
 }
 
 /* ---------- Leyenda LISA del inicio ---------- */
-#hudMoran { color: #7df9ff; font-weight: 700; }
+#hudLinks { color: #7df9ff; font-weight: 700; }
 .hud-legend {
   position: absolute; bottom: 34px; left: 64px;
   display: flex; gap: 18px;
@@ -552,7 +552,6 @@ footer { border-top: 1px solid var(--line); }
 }
 .hud-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .hud-legend i { width: 12px; height: 12px; display: inline-block; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
-.lg-hh { background: rgba(0,212,255,.8); }
-.lg-ll { background: rgba(110,90,255,.8); }
+.lg-flow { width: 22px !important; height: 2px !important; clip-path: none !important; background: linear-gradient(90deg, transparent, #dffcff); box-shadow: 0 0 6px #7df9ff; }
 .lg-pt { background: #dffcff; border-radius: 50%; clip-path: none !important; width: 7px !important; height: 7px !important; box-shadow: 0 0 8px #7df9ff; }
 @media (max-width: 767px) { .hud-legend { display: none; } }

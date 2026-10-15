@@ -26,7 +26,9 @@
     ['singapore', 'sydney'], ['cairo', 'joburg'], ['moscow', 'beijing'], ['la', 'tokyo'],
   ];
 
-  let w, h, k, cx, cy, land = null, layer, nodes = [], arcs = [], sparks = [], t = 0;
+  let w, h, k, cx, cy, land = null, layer, nodes = [], arcs = [], t = 0;
+  let hash = new Map(), walkers = [], segs = [];
+  const CELL = 22;
 
   function project(lon, lat) {
     return [cx + lon * k, cy - lat * k];
@@ -82,7 +84,9 @@
     const lc = layer.getContext('2d');
     lc.setTransform(dpr, 0, 0, dpr, 0, 0);
     nodes = [];
-    sparks = [];
+    walkers = [];
+    segs = [];
+    hash = new Map();
 
     if (land) {
       const data = landMask();
@@ -99,7 +103,7 @@
         }
       }
       // malla tipo constelación: une cada punto con sus vecinos cercanos
-      const cell = 22, hash = new Map();
+      const cell = CELL;
       nodes.forEach((n, i) => {
         const key = Math.floor(n.x / cell) + ',' + Math.floor(n.y / cell);
         if (!hash.has(key)) hash.set(key, []);
@@ -136,7 +140,7 @@
       const [x1, y1] = project(CITIES[b][0], CITIES[b][1]);
       const d = Math.hypot(x1 - x0, y1 - y0);
       const mx = (x0 + x1) / 2, my = (y0 + y1) / 2 - d * 0.32;
-      return { x0, y0, x1, y1, mx, my, s: -Math.random() * 1.5, speed: 0.004 + Math.random() * 0.004 };
+      return { x0, y0, x1, y1, mx, my, s: -Math.random() * 1.5, speed: 0.0025 + Math.random() * 0.0025 };
     });
     lc.lineWidth = 1;
     lc.strokeStyle = 'rgba(200, 240, 255, .16)';
@@ -197,25 +201,64 @@
     }
   }
 
-  // destellos aleatorios sobre los continentes
-  function drawSparks() {
-    if (nodes.length && sparks.length < 70) {
-      for (let i = 0; i < 3; i++) sparks.push({ n: nodes[Math.floor(Math.random() * nodes.length)], life: 0 });
+  // Conexiones que se van trazando despacio de punto en punto sobre los continentes
+  function neighbor(n) {
+    const gx = Math.floor(n.x / CELL), gy = Math.floor(n.y / CELL), cand = [];
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        for (const j of hash.get((gx + dx) + ',' + (gy + dy)) || []) {
+          const m = nodes[j], d = Math.hypot(n.x - m.x, n.y - m.y);
+          if (d > 14 && d < 46) cand.push(m);
+        }
+      }
     }
-    ctx.shadowColor = '#7df9ff'; ctx.shadowBlur = 8;
-    for (const s of sparks) {
-      s.life += 0.02;
-      ctx.fillStyle = `rgba(200, 245, 255, ${Math.sin(s.life * Math.PI) * s.n.fade})`;
-      ctx.beginPath(); ctx.arc(s.n.x, s.n.y, 1.6, 0, Math.PI * 2); ctx.fill();
+    return cand.length ? cand[Math.floor(Math.random() * cand.length)] : null;
+  }
+
+  function drawConnections() {
+    if (!nodes.length) return;
+    while (walkers.length < 14) {
+      const from = nodes[Math.floor(Math.random() * nodes.length)];
+      walkers.push({ from, to: neighbor(from), p: 0, hops: 4 + Math.floor(Math.random() * 6) });
     }
-    ctx.shadowBlur = 0;
-    sparks = sparks.filter(s => s.life < 1);
+    ctx.lineCap = 'round';
+    // tramos ya conectados: se desvanecen lentamente
+    for (const sg of segs) {
+      sg.a -= 0.004;
+      ctx.strokeStyle = `rgba(150, 235, 255, ${Math.max(0, sg.a) * 0.7})`;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.moveTo(sg.x0, sg.y0); ctx.lineTo(sg.x1, sg.y1); ctx.stroke();
+    }
+    segs = segs.filter(sg => sg.a > 0);
+    // tramos que se están trazando
+    for (const wk of walkers) {
+      if (!wk.to) { wk.hops = 0; continue; }
+      wk.p += 0.012;
+      const p = Math.min(1, wk.p);
+      const x = wk.from.x + (wk.to.x - wk.from.x) * p, y = wk.from.y + (wk.to.y - wk.from.y) * p;
+      ctx.strokeStyle = 'rgba(190, 245, 255, .85)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(wk.from.x, wk.from.y); ctx.lineTo(x, y); ctx.stroke();
+      ctx.shadowColor = '#7df9ff'; ctx.shadowBlur = 10;
+      ctx.fillStyle = 'rgba(220, 252, 255, .95)';
+      ctx.beginPath(); ctx.arc(wk.from.x, wk.from.y, 1.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 1.9, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      if (wk.p >= 1) {
+        segs.push({ x0: wk.from.x, y0: wk.from.y, x1: wk.to.x, y1: wk.to.y, a: 1 });
+        wk.from = wk.to;
+        wk.to = neighbor(wk.from);
+        wk.p = 0;
+        wk.hops--;
+      }
+    }
+    walkers = walkers.filter(wk => wk.hops > 0);
   }
 
   function frame() {
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(layer, 0, 0, w, h);
-    drawSparks();
+    drawConnections();
     drawArcs();
     drawCities();
   }

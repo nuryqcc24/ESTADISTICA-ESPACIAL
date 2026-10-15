@@ -165,3 +165,35 @@ document.querySelectorAll('.viewer').forEach(v => v.addEventListener('click', e 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewers(); });
 
 document.getElementById('year').textContent = new Date().getFullYear();
+
+// ===================== Hojitas que salen del nombre =====================
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#7bc96f', '#4caf50', '#a5d66f', '#f5b014', '#ffd166', '#e8a33d'];
+  const leafSVG = c => `<svg viewBox="0 0 24 24"><path fill="${c}" d="M5 21c0-9 5-16 16-18-1 11-8 17-16 18z"/><path d="M5 21C9 15 13 10 19 5" stroke="rgba(0,0,0,.25)" stroke-width="1.2" fill="none"/></svg>`;
+
+  function spawn(el) {
+    const leaf = document.createElement('span');
+    leaf.className = 'leaf';
+    const size = 10 + Math.random() * 10;
+    leaf.style.width = leaf.style.height = size + 'px';
+    leaf.style.left = Math.random() * 100 + '%';
+    leaf.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+    leaf.style.setProperty('--dy', (80 + Math.random() * 140) + 'px');
+    leaf.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+    leaf.style.setProperty('--dur', (3 + Math.random() * 2.5) + 's');
+    leaf.innerHTML = leafSVG(colors[Math.floor(Math.random() * colors.length)]);
+    leaf.addEventListener('animationend', e => { if (e.target === leaf) leaf.remove(); });
+    el.appendChild(leaf);
+  }
+
+  document.querySelectorAll('.leafy').forEach(el => {
+    const max = +el.dataset.leaves || 4;
+    setInterval(() => {
+      if (document.hidden || el.querySelectorAll('.leaf').length >= max) return;
+      spawn(el);
+    }, 650);
+    // Lluvia de hojitas al pasar el mouse por el nombre
+    el.addEventListener('mouseenter', () => { for (let i = 0; i < 8; i++) setTimeout(() => spawn(el), i * 60); });
+  });
+})();

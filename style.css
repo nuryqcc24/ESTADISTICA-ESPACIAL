@@ -345,3 +345,53 @@ footer { background: var(--navy); color: rgba(255,255,255,.55); text-align: cent
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .fade-up, .reveal { opacity: 1; transform: none; }
 }
+
+/* ---------- Nombre con hojitas ---------- */
+.brand-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  letter-spacing: .12em;
+  background: linear-gradient(90deg, #ffffff 0%, #ffe08a 35%, #f5b014 50%, #ffe08a 65%, #ffffff 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 6s linear infinite;
+}
+@keyframes shine { to { background-position: -250% center; } }
+
+.leafy { position: relative; display: inline-block; }
+.navbar-brand .brand-name { font-size: 1.05rem; }
+.hero-name {
+  margin: 0 0 18px;
+  font-size: clamp(1rem, 2.4vw, 1.45rem);
+  padding-left: 34px;
+}
+.hero-name::before {
+  content: '';
+  position: absolute; left: 0; top: 50%;
+  width: 24px; height: 2px; background: var(--gold);
+}
+
+.leaf {
+  position: absolute;
+  top: 40%;
+  width: 14px; height: 14px;
+  pointer-events: none;
+  z-index: 3;
+  animation: leafFall var(--dur, 4s) ease-in forwards;
+}
+.leaf svg { width: 100%; height: 100%; display: block; animation: leafSway 1.6s ease-in-out infinite alternate; }
+@keyframes leafFall {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.4); }
+  12%  { opacity: 1; transform: translate(calc(var(--dx) * .1), -14px) rotate(40deg) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.8); }
+}
+@keyframes leafSway { from { transform: rotate(-25deg) translateX(-4px); } to { transform: rotate(25deg) translateX(4px); } }
+
+@media (max-width: 575px) {
+  .navbar-brand .brand-name { font-size: .78rem; letter-spacing: .06em; }
+}
+@media (max-width: 380px) {
+  .navbar-brand .brand-name { font-size: .68rem; letter-spacing: .03em; }
+}

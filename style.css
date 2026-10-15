@@ -555,3 +555,23 @@ footer { border-top: 1px solid var(--line); }
 @media (max-width: 991px) {
   .hud { background: linear-gradient(180deg, rgba(2,8,20,.35) 0%, rgba(2,8,20,.7) 30%, rgba(2,8,20,.55) 70%, rgba(2,8,20,.2) 100%); }
 }
+
+/* ---------- Logos de la UNA y FINESI en la barra superior ---------- */
+.navbar-brand { display: flex; align-items: center; gap: 10px; }
+.nav-logo {
+  height: 48px; width: auto;
+  filter: drop-shadow(0 0 6px rgba(0,212,255,.35));
+  transition: height .3s, transform .3s;
+}
+.nav-logo:hover { transform: scale(1.08); }
+.navbar.scrolled .nav-logo { height: 38px; }
+.brand-sep { width: 1px; height: 34px; background: linear-gradient(transparent, rgba(0,212,255,.7), transparent); margin: 0 4px; }
+@media (max-width: 575px) {
+  .navbar-brand { gap: 6px; }
+  .nav-logo, .navbar.scrolled .nav-logo { height: 32px; }
+  .brand-sep { height: 24px; margin: 0 2px; }
+  .navbar-brand .brand-name { font-size: .6rem; letter-spacing: .03em; white-space: normal; line-height: 1.3; max-width: 130px; }
+}
+@media (max-width: 575px) {
+  .hero-badge { border-radius: 14px; letter-spacing: .1em; font-size: .75rem; }
+}

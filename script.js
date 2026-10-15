@@ -39,10 +39,10 @@
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // escala tipo "cover", centrado para ver América, Europa y África
-    k = Math.max(w / 330, h / 140);
-    cx = w * 0.5 + 15 * k;
-    cy = h * 0.52 + 12 * k;
+    // en pantallas anchas se ve el mundo completo; en celular se acerca
+    k = w < 768 ? Math.max(w / 330, h / 140) : Math.min(w / 300, h / 125);
+    cx = w * 0.5 + 8 * k;
+    cy = h * 0.5 + 14 * k;
     build(dpr);
   }
 
@@ -58,8 +58,13 @@
         for (const poly of polys) {
           mc.beginPath();
           for (const ring of poly) {
+            let prev = null, off = 0;
             ring.forEach(([lon, lat], i) => {
-              const [x, y] = project(lon + shift, lat);
+              // evita franjas falsas en polígonos que cruzan el meridiano 180°
+              if (prev !== null && lon - prev > 180) off -= 360;
+              if (prev !== null && lon - prev < -180) off += 360;
+              prev = lon;
+              const [x, y] = project(lon + off + shift, lat);
               i ? mc.lineTo(x, y) : mc.moveTo(x, y);
             });
             mc.closePath();
@@ -81,7 +86,7 @@
 
     if (land) {
       const data = landMask();
-      const step = w < 700 ? 7 : 9;
+      const step = w < 700 ? 6 : 7;
       for (let y = 0; y < h; y += step) {
         for (let x = 0; x < w; x += step) {
           const jx = x + (Math.random() - 0.5) * step * 0.8;
@@ -89,7 +94,7 @@
           const px = Math.round(jx), py = Math.round(jy);
           if (px < 0 || py < 0 || px >= w || py >= h) continue;
           if (data[(py * w + px) * 4 + 3] > 0) {
-            nodes.push({ x: jx, y: jy, fade: 0.35 + 0.65 * Math.min(1, jx / (w * 0.75)) });
+            nodes.push({ x: jx, y: jy, fade: 0.5 + 0.5 * Math.min(1, jx / (w * 0.6)) });
           }
         }
       }
@@ -111,7 +116,7 @@
               if (j <= i) continue;
               const m = nodes[j], d = Math.hypot(n.x - m.x, n.y - m.y);
               if (d < cell && Math.random() < 0.35) {
-                lc.strokeStyle = `rgba(120, 210, 255, ${0.22 * n.fade})`;
+                lc.strokeStyle = `rgba(120, 210, 255, ${0.32 * n.fade})`;
                 lc.beginPath(); lc.moveTo(n.x, n.y); lc.lineTo(m.x, m.y); lc.stroke();
                 if (++links >= 2) break;
               }
@@ -120,8 +125,8 @@
         }
       });
       for (const n of nodes) {
-        lc.fillStyle = `rgba(150, 225, 255, ${(0.35 + Math.random() * 0.4) * n.fade})`;
-        lc.fillRect(n.x - 0.8, n.y - 0.8, 1.6, 1.6);
+        lc.fillStyle = `rgba(160, 230, 255, ${(0.55 + Math.random() * 0.45) * n.fade})`;
+        lc.fillRect(n.x - 0.9, n.y - 0.9, 1.8, 1.8);
       }
     }
 

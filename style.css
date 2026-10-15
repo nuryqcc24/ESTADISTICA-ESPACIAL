@@ -555,3 +555,9 @@ footer { border-top: 1px solid var(--line); }
 .lg-flow { width: 22px !important; height: 2px !important; clip-path: none !important; background: linear-gradient(90deg, transparent, #dffcff); box-shadow: 0 0 6px #7df9ff; }
 .lg-pt { background: #dffcff; border-radius: 50%; clip-path: none !important; width: 7px !important; height: 7px !important; box-shadow: 0 0 8px #7df9ff; }
 @media (max-width: 767px) { .hud-legend { display: none; } }
+
+/* Sombra suave detrás del texto para leerlo sobre el mapa */
+.hud { background: linear-gradient(90deg, rgba(2,8,20,.6) 0%, rgba(2,8,20,.3) 38%, transparent 60%); }
+@media (max-width: 991px) {
+  .hud { background: linear-gradient(180deg, rgba(2,8,20,.35) 0%, rgba(2,8,20,.7) 30%, rgba(2,8,20,.55) 70%, rgba(2,8,20,.2) 100%); }
+}

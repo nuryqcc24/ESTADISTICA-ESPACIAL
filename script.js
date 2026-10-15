@@ -21,8 +21,36 @@
     }));
   }
 
+  let t = 0;
+
+  // Ondas de partículas luminosas (estilo holograma)
+  function drawWaves() {
+    const waves = [
+      { amp: 60, len: 0.0045, speed: 0.012, y: 0.72, color: '0, 212, 255', alpha: 0.55 },
+      { amp: 45, len: 0.006, speed: -0.009, y: 0.78, color: '47, 128, 255', alpha: 0.45 },
+      { amp: 80, len: 0.003, speed: 0.007, y: 0.66, color: '125, 249, 255', alpha: 0.3 },
+    ];
+    for (const wv of waves) {
+      for (let x = 0; x < w; x += 6) {
+        const y = h * wv.y
+          + Math.sin(x * wv.len + t * wv.speed * 60) * wv.amp
+          + Math.sin(x * wv.len * 2.3 + t * 0.02) * wv.amp * 0.3;
+        const flicker = 0.5 + 0.5 * Math.sin(x * 0.05 + t * 0.08);
+        ctx.fillStyle = `rgba(${wv.color}, ${wv.alpha * flicker})`;
+        ctx.fillRect(x, y, 2, 2);
+        // polvo disperso alrededor de la onda
+        if ((x / 6) % 4 === 0) {
+          const off = Math.sin(x * 12.9898 + t * 0.01) * 26;
+          ctx.fillStyle = `rgba(${wv.color}, ${wv.alpha * 0.35})`;
+          ctx.fillRect(x, y + off, 1.5, 1.5);
+        }
+      }
+    }
+  }
+
   function draw() {
     ctx.clearRect(0, 0, w, h);
+    drawWaves();
     const maxDist = 150;
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
@@ -30,7 +58,7 @@
         const q = points[j];
         const d = Math.hypot(p.x - q.x, p.y - q.y);
         if (d < maxDist) {
-          ctx.strokeStyle = `rgba(160, 175, 210, ${0.28 * (1 - d / maxDist)})`;
+          ctx.strokeStyle = `rgba(0, 190, 255, ${0.35 * (1 - d / maxDist)})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
@@ -39,15 +67,19 @@
         }
       }
     }
-    ctx.fillStyle = 'rgba(245, 176, 20, .85)';
+    ctx.fillStyle = 'rgba(0,212,255, .9)';
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 8;
     for (const p of points) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.shadowBlur = 0;
   }
 
   function step() {
+    t++;
     for (const p of points) {
       p.x += p.vx;
       p.y += p.vy;
@@ -169,7 +201,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 // ===================== Hojitas que salen del nombre =====================
 (function () {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const colors = ['#7bc96f', '#4caf50', '#a5d66f', '#f5b014', '#ffd166', '#e8a33d'];
+  const colors = ['#00e5ff', '#38bdf8', '#7df9ff', '#2f80ff', '#a5f3fc', '#00b4d8'];
   const leafSVG = c => `<svg viewBox="0 0 24 24"><path fill="${c}" d="M5 21c0-9 5-16 16-18-1 11-8 17-16 18z"/><path d="M5 21C9 15 13 10 19 5" stroke="rgba(0,0,0,.25)" stroke-width="1.2" fill="none"/></svg>`;
 
   function spawn(el) {
